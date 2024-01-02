@@ -1,5 +1,7 @@
 const express = require('express');
-const { BlobServiceClient } = require("@azure/storage-blob");
+const { ShareServiceClient } = require("@azure/storage-file-share");
+
+const SHARE_NAME = 'fs0';
 
 require('dotenv').config();
 
@@ -7,23 +9,23 @@ const app = express();
 const port = 3000;
 
 const storageAccountConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const blobServiceClient = BlobServiceClient.fromConnectionString(storageAccountConnectionString);
+const shareServiceClient = ShareServiceClient.fromConnectionString(storageAccountConnectionString);
 
-app.get('/:container/:filename', async (req, res) => {
+app.get('/:directory/:filename', async (req, res) => {
   try {
-    const containerName = req.params.container;
+    const directory = req.params.directory;
     const fileName = req.params.filename;
-    const containerClient = blobServiceClient.getContainerClient(containerName);
-    const blobClient = containerClient.getBlobClient(fileName);
+    const shareClient = shareServiceClient.getShareClient(SHARE_NAME);
+    const fileClient = shareClient.getDirectoryClient(directory).getFileClient(fileName);
 
-    const doesContainerExists = await containerClient.exists();
-    const doesBlobExists = await blobClient.exists();
+    const doesShareClientExists = await shareClient.exists();
+    const doesFileExists = await fileClient.exists();
 
-    if (!doesContainerExists || !doesBlobExists) {
-      return res.status(404).send("Container or file not found");
+    if (!doesShareClientExists || !doesFileExists) {
+      return res.status(404).send("Directory not found");
     }
 
-    const downloadBlockBlobResponse = await blobClient.download();
+    const downloadBlockBlobResponse = await fileClient.download();
     downloadBlockBlobResponse.readableStreamBody.pipe(res);
   } catch (error) {
     console.error(error);
