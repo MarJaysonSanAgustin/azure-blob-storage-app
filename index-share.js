@@ -22,7 +22,7 @@ app.get('/:directory/:filename', async (req, res) => {
     const doesFileExists = await fileClient.exists();
 
     if (!doesShareClientExists || !doesFileExists) {
-      return res.status(404).send("Container or file not found");
+      return res.status(404).send("Directory not found");
     }
 
     const downloadBlockBlobResponse = await fileClient.download();
