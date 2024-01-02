@@ -1,32 +1,36 @@
-#!/usr/bin/env node
+const express = require('express');
+const { BlobServiceClient } = require("@azure/storage-blob");
+
 require('dotenv').config();
 
-const { BlobServiceClient } = require("@azure/storage-blob")
+const app = express();
+const port = 3000;
 
-const storageAccountConnectionString = process.env.AZURE_STORAGE_CONNECTION_STIRNG;
+const storageAccountConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const blobServiceClient = BlobServiceClient.fromConnectionString(storageAccountConnectionString);
 
-async function main() {
-  const containerName = 'photos';
-  const containerClient = blobServiceClient.getContainerClient(containerName);
-  const doesContainerExists = await containerClient.exists();
-  if (!doesContainerExists) {
-    const createContainerResponse = await containerClient.createIfNotExists();
-    console.log(`Create container ${containerName} successfully`, createContainerResponse.succeeded);
-  } else {
-    console.log(`Container ${containerName} aleady exists`)
+app.get('/:container/:filename', async (req, res) => {
+  try {
+    const containerName = req.params.container;
+    const fileName = req.params.filename;
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blobClient = containerClient.getBlobClient(fileName);
+
+    const doesContainerExists = await containerClient.exists();
+    const doesBlobExists = await blobClient.exists();
+
+    if (!doesContainerExists || !doesBlobExists) {
+      return res.status(404).send("Container or file not found");
+    }
+
+    const downloadBlockBlobResponse = await blobClient.download();
+    downloadBlockBlobResponse.readableStreamBody.pipe(res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error retrieving file");
   }
+});
 
-  const fileName = 'docs-and-friends-selfie-stick.png';
-  const blockBlobClient = containerClient.getBlockBlobClient(fileName);
-  blockBlobClient.uploadFile(fileName);
-
-  let blobs = containerClient.listBlobsFlat();
-  let blob = await blobs.next();
-  while(!blob.done) {
-    console.log(`${blob.value.name} --> Created: ${blob.value.properties.createdOn}  | Size: ${blob.value.properties.contentLength}`);
-    blob = await blobs.next();
-  }
-}
-
-main();
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
