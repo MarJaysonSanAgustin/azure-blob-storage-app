@@ -29,7 +29,7 @@ app.get('/:directory/:filename', async (req, res) => {
     downloadBlockBlobResponse.readableStreamBody.pipe(res);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error retrieving file");
+    res.status(500).send({ error });
   }
 });
 
