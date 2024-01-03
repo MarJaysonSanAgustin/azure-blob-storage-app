@@ -1,9 +1,8 @@
 const express = require('express');
 const { ShareServiceClient } = require("@azure/storage-file-share");
+require('dotenv').config();
 
 const SHARE_NAME = process.env.SHARE_NAME || 'fs0';
-
-require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,23 +12,26 @@ const shareServiceClient = ShareServiceClient.fromConnectionString(storageAccoun
 
 app.get('/:directory/:filename', async (req, res) => {
   try {
-    const directory = req.params.directory;
-    const fileName = req.params.filename;
-    const shareClient = shareServiceClient.getShareClient(SHARE_NAME);
-    const fileClient = shareClient.getDirectoryClient(directory).getFileClient(fileName);
+    const { directory, filename } = req.params
 
-    const doesShareClientExists = await shareClient.exists();
-    const doesFileExists = await fileClient.exists();
-
-    if (!doesShareClientExists || !doesFileExists) {
-      return res.status(404).send("Directory not found");
+    if (!directory || !filename) {
+      return res.status(400).send({ message: 'Invalid directory or filename.' })
     }
 
-    const downloadBlockBlobResponse = await fileClient.download();
-    downloadBlockBlobResponse.readableStreamBody.pipe(res);
+    const shareClient = shareServiceClient.getShareClient(SHARE_NAME);
+    const directoryClient = shareClient.getDirectoryClient(directory);
+    const fileClient = directoryClient.getFileClient(filename);
+
+    const doesFileExists = await fileClient.exists();
+
+    if (!doesFileExists) {
+      return res.status(404).send({ message: 'File not found.' });
+    }
+
+    const downloadBlockFileResponse = await fileClient.download();
+    downloadBlockFileResponse.readableStreamBody.pipe(res);
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ clientIpAddress: req.socket.remoteAddress, error: error });
+    res.status(500).send({ error });
   }
 });
 
