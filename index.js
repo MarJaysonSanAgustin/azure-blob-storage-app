@@ -1,12 +1,12 @@
 const express = require('express');
 const { ShareServiceClient } = require("@azure/storage-file-share");
 
-const SHARE_NAME = 'fs0';
+const SHARE_NAME = process.env.SHARE_NAME || 'fs0';
 
 require('dotenv').config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const storageAccountConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const shareServiceClient = ShareServiceClient.fromConnectionString(storageAccountConnectionString);
