@@ -24,11 +24,9 @@ const downloadFileIfExists = async ({ req, res, directory = '', filename }) => {
 
     const downloadBlockFileResponse = await fileClient.download();
     downloadBlockFileResponse.readableStreamBody.pipe(res);
-
   } catch (error) {
     res.status(500).send({ error })
   }
-
 }
 
 app.get('/:filename', async (req, res) => {
@@ -38,8 +36,7 @@ app.get('/:filename', async (req, res) => {
     return res.status(400).send({ message: 'Invalid filename.' });
   }
 
-  const result = await downloadFileIfExists({ req, res, filename });
-  return result;
+  await downloadFileIfExists({ req, res, filename });
 })
 
 app.get('/:directory/:filename', async (req, res) => {
@@ -49,8 +46,7 @@ app.get('/:directory/:filename', async (req, res) => {
     return res.status(400).send({ message: 'Invalid directory or filename.' })
   }
 
-  const result = await downloadFileIfExists({ req, res, directory, filename });
-  return result;
+  await downloadFileIfExists({ req, res, directory, filename });
 });
 
 app.listen(port, () => {
