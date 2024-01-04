@@ -11,15 +11,9 @@ const storageAccountConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRI
 const shareServiceClient = ShareServiceClient.fromConnectionString(storageAccountConnectionString);
 const shareClient = shareServiceClient.getShareClient(SHARE_NAME);
 
-app.get('/:directory/:filename', async (req, res) => {
+const downloadFileIfExists = async ({ req, res, directory = '', filename }) => {
   try {
-    const { directory, filename } = req.params
-
-    if (!directory || !filename) {
-      return res.status(400).send({ message: 'Invalid directory or filename.' })
-    }
-
-    const directoryClient = shareClient.getDirectoryClient(directory);
+    const directoryClient = shareClient.getDirectoryClient(directory)
     const fileClient = directoryClient.getFileClient(filename);
 
     const doesFileExists = await fileClient.exists();
@@ -30,9 +24,33 @@ app.get('/:directory/:filename', async (req, res) => {
 
     const downloadBlockFileResponse = await fileClient.download();
     downloadBlockFileResponse.readableStreamBody.pipe(res);
+
   } catch (error) {
-    res.status(500).send({ error });
+    res.status(500).send({ error })
   }
+
+}
+
+app.get('/:filename', async (req, res) => {
+  const { filename } = req.params;
+
+  if (!filename) {
+    return res.status(400).send({ message: 'Invalid filename.' });
+  }
+
+  const result = await downloadFileIfExists({ req, res, filename });
+  return result;
+})
+
+app.get('/:directory/:filename', async (req, res) => {
+  const { directory, filename } = req.params
+
+  if (!directory || !filename) {
+    return res.status(400).send({ message: 'Invalid directory or filename.' })
+  }
+
+  const result = await downloadFileIfExists({ req, res, directory, filename });
+  return result;
 });
 
 app.listen(port, () => {
