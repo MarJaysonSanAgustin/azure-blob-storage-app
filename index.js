@@ -11,7 +11,7 @@ const storageAccountConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRI
 const shareServiceClient = ShareServiceClient.fromConnectionString(storageAccountConnectionString);
 const shareClient = shareServiceClient.getShareClient(SHARE_NAME);
 
-const downloadFileIfExists = async ({ req, res, directory = '', filename }) => {
+const downloadFileIfExists = async ({ res, directory = '', filename }) => {
   try {
     const directoryClient = shareClient.getDirectoryClient(directory)
     const fileClient = directoryClient.getFileClient(filename);
@@ -36,7 +36,7 @@ app.get('/:filename', async (req, res) => {
     return res.status(400).send({ message: 'Invalid filename.' });
   }
 
-  await downloadFileIfExists({ req, res, filename });
+  await downloadFileIfExists({ res, filename });
 })
 
 app.get('/:directory/:filename', async (req, res) => {
@@ -46,7 +46,7 @@ app.get('/:directory/:filename', async (req, res) => {
     return res.status(400).send({ message: 'Invalid directory or filename.' })
   }
 
-  await downloadFileIfExists({ req, res, directory, filename });
+  await downloadFileIfExists({ res, directory, filename });
 });
 
 app.listen(port, () => {
