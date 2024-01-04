@@ -9,6 +9,7 @@ const port = process.env.PORT || 3000;
 
 const storageAccountConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const shareServiceClient = ShareServiceClient.fromConnectionString(storageAccountConnectionString);
+const shareClient = shareServiceClient.getShareClient(SHARE_NAME);
 
 app.get('/:directory/:filename', async (req, res) => {
   try {
@@ -18,7 +19,6 @@ app.get('/:directory/:filename', async (req, res) => {
       return res.status(400).send({ message: 'Invalid directory or filename.' })
     }
 
-    const shareClient = shareServiceClient.getShareClient(SHARE_NAME);
     const directoryClient = shareClient.getDirectoryClient(directory);
     const fileClient = directoryClient.getFileClient(filename);
 
